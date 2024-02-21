@@ -473,7 +473,7 @@ def show_comments_table():
 #streamlit part
 
 with st.sidebar:
-    st.title(":green[YOUTUBE DATA HAVERSTING AND WAREHOUSING]")
+    st.title(":green[YOUTUBE DATA HARVESTING AND WAREHOUSING]")
     st.header("Skills involved")
     st.caption("Python Scripting")
     st.caption("API Scrapping")
