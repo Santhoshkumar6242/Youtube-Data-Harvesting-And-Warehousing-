@@ -73,4 +73,7 @@
 
 * Filter and process the collected data from the tables depending on the given requirements by using SQL queries and transform the processed data into a DataFrame format.
 
+###  6. Data Visualization
+
+* Visualize the collected data from the tables by using the plotly.express and transform the processed data into a chart format to understand easily.
 
