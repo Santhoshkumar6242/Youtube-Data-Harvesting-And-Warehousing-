@@ -468,58 +468,84 @@ def show_comments_table():
 
 #streamlit part
 
-with st.sidebar:
-    st.title(":green[YOUTUBE DATA HARVESTING AND WAREHOUSING]")
-    st.header("Skills involved")
-    st.caption("Python Scripting")
-    st.caption("API Scrapping")
-    st.caption("MongoDB")
-    st.caption("MySql")
+st.set_page_config(
+                   page_title= "[YOUTUBE DATA HARVESTING AND WAREHOUSING",
+                   layout="wide",
+                   initial_sidebar_state="expanded"
+                   )
+st.markdown(
+    """
+    <style>
+    .reportview-container {
+        background: url("https://pixabay.com/photos/black-board-traces-of-chalk-school-1072366/")
+    }
+   .sidebar .sidebar-content {
+        background: url("https://pixabay.com/photos/black-board-traces-of-chalk-school-1072366/")
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-channel_id=st.text_input("Enter the channel ID")
+st.header(":white[YOUTUBE DATA HARVESTING AND WAREHOUSING]")
 
-if st.button("collect and store data"):
-    ch_ids=[]
+    
+col1,col2 = st.columns(2)
+
+with col1:
+
+    channel_id=st.text_input("Enter the channel ID")
+
+    if st.button("collect and store data"):
+        ch_ids=[]
+        db=client["Youtube_data"]
+        coll1=db["Channel_details"]
+        for ch_data in coll1.find({},{"_id":0,"channel_information":1}):
+            ch_ids.append(ch_data["channel_information"]["Channel_Id"])
+
+        if channel_id in ch_ids:
+            st.success("Channel ID already exists")
+        else:
+            insert=channel_details(channel_id)
+            st.success(insert)
+
+    all_channels= []
     db=client["Youtube_data"]
     coll1=db["Channel_details"]
+
     for ch_data in coll1.find({},{"_id":0,"channel_information":1}):
-        ch_ids.append(ch_data["channel_information"]["Channel_Id"])
-
-    if channel_id in ch_ids:
-        st.success("Channel ID already exists")
-    else:
-        insert=channel_details(channel_id)
-        st.success(insert)
-
-all_channels= []
-db=client["Youtube_data"]
-coll1=db["Channel_details"]
-
-for ch_data in coll1.find({},{"_id":0,"channel_information":1}):
-    all_channels.append(ch_data["channel_information"]["Channel_Name"])
-
-uniqye_channel= st.selectbox("Select The Channel",all_channels)
+        all_channels.append(ch_data["channel_information"]["Channel_Name"])
 
 
-if st.button("Migrate to sql"):
-    Table=tables(uniqye_channel)
-    st.success(Table)
-
-show_table=st.radio("SELECT THE TABLE FOR VIEW",("CHANNELS","PLAYLISTS","VIDEOS","COMMENTS"))
-
-if show_table=="CHANNELS":
-    show_channels_table()
-
-elif show_table=="PLAYLISTS":
-    show_playlists_table()
-
-elif show_table=="VIDEOS":
-    show_videos_table()
-
-elif show_table=="COMMENTS":
-    show_comments_table()
+    uniqye_channel= st.selectbox("Select The Channel",all_channels)
 
 
+    if st.button("Migrate to sql"):
+        Table=tables(uniqye_channel)
+        st.success(Table)
+
+    show_table=st.radio("SELECT THE TABLE FOR VIEW",("CHANNELS","PLAYLISTS","VIDEOS","COMMENTS"),horizontal= True)
+
+with col2:
+
+    st.markdown(" ")
+    st.markdown(" ")
+
+    if show_table=="CHANNELS":
+        show_channels_table()
+
+    elif show_table=="PLAYLISTS":
+        show_playlists_table()
+
+    elif show_table=="VIDEOS":
+        show_videos_table()
+
+    elif show_table=="COMMENTS":
+        show_comments_table()
+st.markdown(" ")
+st.markdown(" ")
+st.markdown(" ")
+st.markdown(" ")
 #SQL Connection
 mydb=psycopg2.connect(host="localhost",
                     user="postgres",
@@ -528,117 +554,124 @@ mydb=psycopg2.connect(host="localhost",
                     port="5432")
 cursor=mydb.cursor()
 
-question=st.selectbox("Select your question",("1. All the videos and the name",
-                                              "2. Channels with most number of videos",
-                                              "3. 10 most viewed videos",
-                                              "4. comments in each videos",
-                                              "5. Videos with highest likes",
-                                              "6. Likes of all videos",
-                                              "7. Views of each channel",
-                                              "8. Videos published in the year of 2023",
-                                              "9. Average duration of all videos in each channel",
-                                              "10. videos with highest number of comments"))
+col1,col2 = st.columns(2)
 
-if question=="1. All the videos and the name":
-    query1="""select title as videos,channel_name as channelname from videos"""
-    cursor.execute(query1)
-    mydb.commit()
-    t1=cursor.fetchall()
-    df=pd.DataFrame(t1,columns=["video title","channel name"])
-    st.write(df)
+with col1:
+    question=st.selectbox("Select your question",("1. Videos and the name",
+                                                "2. Channels with number of videos uploded",
+                                                "3. Top 10 viewed videos",
+                                                "4. comments in each videos",
+                                                "5. Channels with highest likes",
+                                                "6. Likes of all videos",
+                                                "7. Views of each channel",
+                                                "8. Videos published in the year of 2023",
+                                                "9. Average duration of all videos in each channel",
+                                                "10. videos with highest number of comments"))
 
-elif question=="2. Channels with most number of videos":
-    query2="""select channel_name as channelname, total_videos as no_videos from channels order by total_videos desc"""
-    cursor.execute(query2)
-    mydb.commit()
-    t2=cursor.fetchall()
-    df1=pd.DataFrame(t2,columns=["channel name","No of videos"])
-      
-    fig_amount_1= px.bar(df1, x="channel name", y="No of videos", title= "CHANNEL AND VIDEOS", hover_name= "channel name",
-                        color_discrete_sequence=px.colors.sequential.Magenta,height=650,width=600)
-    st.plotly_chart(fig_amount_1)
+with col2:
+    st.markdown(" ")
+    st.markdown(" ")
 
-elif question=="3. 10 most viewed videos":
-    query3="""select views as views,channel_name as channelname,title as videotitle from videos where views is not null order by views desc limit  10"""
-    cursor.execute(query3)
-    mydb.commit()
-    t3=cursor.fetchall()
-    df2=pd.DataFrame(t3,columns=["views","channel name","videotitle"])
-    
-    fig_amount_1= px.bar(df2, x="channel name", y="views", title= "CHANNEL AND VIEWS", hover_name= "channel name",
-                        color_discrete_sequence=px.colors.sequential.Magenta,height=650,width=600)
-    st.plotly_chart(fig_amount_1)     
+    if question=="1. Videos and the name":
+        query1="""select title as videos,channel_name as channelname from videos"""
+        cursor.execute(query1)
+        mydb.commit()
+        t1=cursor.fetchall()
+        df=pd.DataFrame(t1,columns=["video title","channel name"])
+        st.write(df)
 
-elif question=="4. comments in each videos":
-    query4="""select comments as no_comments,title as videotitle from videos where comments is not null"""
-    cursor.execute(query4)
-    mydb.commit()
-    t4=cursor.fetchall()
-    df3=pd.DataFrame(t4,columns=["no of comments","videotitle"])
-    st.write(df3)
+    elif question=="2. Channels with number of videos uploded":
+        query2="""select channel_name as channelname, total_videos as no_videos from channels order by total_videos desc"""
+        cursor.execute(query2)
+        mydb.commit()
+        t2=cursor.fetchall()
+        df1=pd.DataFrame(t2,columns=["channel name","No of videos"])
+        
+        fig_amount_1= px.bar(df1, x="channel name", y="No of videos", title= "CHANNEL AND VIDEOS", hover_name= "channel name",
+                            color_discrete_sequence=px.colors.sequential.Magenta,height=650,width=600)
+        st.plotly_chart(fig_amount_1)
 
-elif question=="5. Videos with highest likes":
-    query5="""select title as videotitle,channel_name as channelname,likes as likecount from videos where likes is not null order by likes desc"""
-    cursor.execute(query5)
-    mydb.commit()
-    t5=cursor.fetchall()
-    df4=pd.DataFrame(t5,columns=["videotitle","channelname","likecount"])
-      
-    fig_amount_1= px.bar(df4, x="channelname", y="likecount", title= "VIDEOS AND LIKES",
+    elif question=="3. Top 10 viewed videos":
+        query3="""select views as views,channel_name as channelname,title as videotitle from videos where views is not null order by views desc limit  10"""
+        cursor.execute(query3)
+        mydb.commit()
+        t3=cursor.fetchall()
+        df2=pd.DataFrame(t3,columns=["views","channel name","videotitle"])
+        
+        fig_amount_1= px.bar(df2, x="channel name", y="views", title= "CHANNEL AND VIEWS", hover_name= "videotitle",
+                            color_discrete_sequence=px.colors.sequential.Magenta,height=650,width=600)
+        st.plotly_chart(fig_amount_1)     
+
+    elif question=="4. comments in each videos":
+        query4="""select comments as no_comments,title as videotitle from videos where comments is not null"""
+        cursor.execute(query4)
+        mydb.commit()
+        t4=cursor.fetchall()
+        df3=pd.DataFrame(t4,columns=["no of comments","videotitle"])
+        st.write(df3)
+
+    elif question=="5. Channels with highest likes":
+        query5="""select sum (likes) as likecount, channel_name as channelname from videos group by channel_name order by sum(likes) desc"""
+        cursor.execute(query5)
+        mydb.commit()
+        t5=cursor.fetchall()
+        df4=pd.DataFrame(t5,columns=["likecount","channelname"])
+        
+        fig_amount_1= px.bar(df4, x="channelname", y="likecount", title= "CHANNELS AND  LIKES",hover_name= "channelname",
+                            color_discrete_sequence=px.colors.sequential.Mint,height=650,width=600)
+        st.plotly_chart(fig_amount_1)  
+
+    elif question=="6. Likes of all videos":
+        query6="""select likes as likecount,title as videotitle from videos"""
+        cursor.execute(query6)
+        mydb.commit()
+        t6=cursor.fetchall()
+        df5=pd.DataFrame(t6,columns=["likecount","videotitle"])
+        st.write(df5) 
+
+    elif question=="7. Views of each channel":
+        query7="""select channel_name as channelname,viwes as totalviews from channels"""
+        cursor.execute(query7)
+        mydb.commit()
+        t7=cursor.fetchall()
+        df6=pd.DataFrame(t7,columns=["channelname","totalviews"])
+        
+        fig_amount_1= px.bar(df6, x="channelname", y="totalviews", title= "CHANNEL AND TOTAL VIEWS", hover_name= "channelname",
                         color_discrete_sequence=px.colors.sequential.Mint,height=650,width=600)
-    st.plotly_chart(fig_amount_1)  
+        st.plotly_chart(fig_amount_1)
+        
+    elif question=="8. Videos published in the year of 2023":
+        query8="""select title as video_title,published_date as videorelease,channel_name as channelname from videos where extract(year from published_date)=2023"""
+        cursor.execute(query8)
+        mydb.commit()
+        t8=cursor.fetchall()
+        df7=pd.DataFrame(t8,columns=["videotitle","published_date","channelname"])
+        st.write(df7)    
 
-elif question=="6. Likes of all videos":
-    query6="""select likes as likecount,title as videotitle from videos"""
-    cursor.execute(query6)
-    mydb.commit()
-    t6=cursor.fetchall()
-    df5=pd.DataFrame(t6,columns=["likecount","videotitle"])
-    st.write(df5) 
+    elif question=="9. Average duration of all videos in each channel":
+        query9="""select channel_name as channelname,AVG (duration)as averageduration from videos group by channel_name"""
+        cursor.execute(query9)
+        mydb.commit()
+        t9=cursor.fetchall()
+        df8=pd.DataFrame(t9,columns=["channelname","averageduration"])
+        
 
-elif question=="7. Views of each channel":
-    query7="""select channel_name as channelname,viwes as totalviews from channels"""
-    cursor.execute(query7)
-    mydb.commit()
-    t7=cursor.fetchall()
-    df6=pd.DataFrame(t7,columns=["channelname","totalviews"])
-     
-    fig_amount_1= px.bar(df6, x="channelname", y="totalviews", title= "CHANNEL AND TOTAL VIEWS", hover_name= "channelname",
-                    color_discrete_sequence=px.colors.sequential.Mint,height=650,width=600)
-    st.plotly_chart(fig_amount_1)
-    
-elif question=="8. Videos published in the year of 2023":
-    query8="""select title as video_title,published_date as videorelease,channel_name as channelname from videos where extract(year from published_date)=2023"""
-    cursor.execute(query8)
-    mydb.commit()
-    t8=cursor.fetchall()
-    df7=pd.DataFrame(t8,columns=["videotitle","published_date","channelname"])
-    st.write(df7)    
+        T9=[]
+        for index,row in df8.iterrows():
+            channel_title=row["channelname"]
+            average_duration=row["averageduration"]
+            average_duration_str=str(average_duration)
+            T9.append(dict(channeltitle=channel_title,avgduration=average_duration_str))
+        df11=pd.DataFrame(T9)
 
-elif question=="9. Average duration of all videos in each channel":
-    query9="""select channel_name as channelname,AVG (duration)as averageduration from videos group by channel_name"""
-    cursor.execute(query9)
-    mydb.commit()
-    t9=cursor.fetchall()
-    df8=pd.DataFrame(t9,columns=["channelname","averageduration"])
-    
+        fig_amount_1= px.bar(df8, x="channelname", y="averageduration", title= "CHANNEL AND IT'S DURATION", hover_name= "channelname",
+                        color_discrete_sequence=px.colors.sequential.Mint,height=650,width=600)
+        st.plotly_chart(fig_amount_1)
 
-    T9=[]
-    for index,row in df8.iterrows():
-        channel_title=row["channelname"]
-        average_duration=row["averageduration"]
-        average_duration_str=str(average_duration)
-        T9.append(dict(channeltitle=channel_title,avgduration=average_duration_str))
-    df11=pd.DataFrame(T9)
-
-    fig_amount_1= px.bar(df8, x="channelname", y="averageduration", title= "CHANNEL AND IT'S DURATION", hover_name= "channelname",
-                    color_discrete_sequence=px.colors.sequential.Mint,height=650,width=600)
-    st.plotly_chart(fig_amount_1)
-
-elif question=="10. videos with highest number of comments":
-    query10="""select title as videotitle, channel_name as channelname,comments as comments from videos where comments is not null order by comments desc"""
-    cursor.execute(query10)
-    mydb.commit()
-    t10=cursor.fetchall()
-    df9=pd.DataFrame(t10,columns=["video title","channel name","comments"])
-    st.write(df9)
+    elif question=="10. videos with highest number of comments":
+        query10="""select title as videotitle, channel_name as channelname,comments as comments from videos where comments is not null order by comments desc"""
+        cursor.execute(query10)
+        mydb.commit()
+        t10=cursor.fetchall()
+        df9=pd.DataFrame(t10,columns=["video title","channel name","comments"])
+        st.write(df9)
