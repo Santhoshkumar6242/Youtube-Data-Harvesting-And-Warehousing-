@@ -473,19 +473,6 @@ st.set_page_config(
                    layout="wide",
                    initial_sidebar_state="expanded"
                    )
-st.markdown(
-    """
-    <style>
-    .reportview-container {
-        background: url("https://pixabay.com/photos/black-board-traces-of-chalk-school-1072366/")
-    }
-   .sidebar .sidebar-content {
-        background: url("https://pixabay.com/photos/black-board-traces-of-chalk-school-1072366/")
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
 st.header(":white[YOUTUBE DATA HARVESTING AND WAREHOUSING]")
 
